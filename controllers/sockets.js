@@ -85,6 +85,22 @@ const webRTCSignalingSocket = (io) => {
 
 
 
+     socket.on("current-room", async ({ sessionId }) => {
+      console.log("Asking for room participants");
+      const session = await Session.findOne({ sessionId });
+
+      io.to(sessionId).emit("all-participants", session?.participants);
+    });
+
+    socket.on("send-offer", async ({ sessionId, sender, receiver, offer }) => {
+      console.log(
+        `User ${sender} is sending an offer ${receiver} to session ${sessionId}`
+      );
+      io.to(sessionId).emit("receive-offer", { sender, receiver, offer });
+    });
+
+
+
 
   });
 };
