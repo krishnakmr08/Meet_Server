@@ -173,6 +173,36 @@ const webRTCSignalingSocket = (io) => {
     });
 
 
+
+    socket.on("hang-up", async () => {
+      console.log("User Hang Up:", socket.id);
+
+      const sessions = await Session.find();
+
+      for (const session of sessions) {
+        const participantIndex = session?.participants?.findIndex(
+          (p) => p?.socketId === socket?.id
+        );
+
+        if (participantIndex !== -1) {
+          const participant = session?.participants[participantIndex];
+          session.participants.splice(participantIndex, 1);
+          await session.save();
+
+          console.log(
+            `User ${participant.name} (${participant.userId}) left session ${session.sessionId}`
+          );
+          io.to(session.sessionId).emit("session-info", {
+            participants: session?.participants,
+          });
+          io.to(session.sessionId).emit("participant-left", participant.userId);
+          break;
+
+        }
+      }
+    });
+
+
     
 
 
