@@ -111,6 +111,21 @@ const webRTCSignalingSocket = (io) => {
     );
 
 
+     socket.on(
+      "send-ice-candidate",
+      async ({ sessionId, sender, receiver, candidate }) => {
+        console.log(
+          `User ${sender} is sending ICE candidate to ${receiver} session ${sessionId}`
+        );
+        io.to(sessionId).emit("receive-ice-candidate", {
+          sender,
+          receiver,
+          candidate,
+        });
+      }
+    );
+
+
 
   });
 };
