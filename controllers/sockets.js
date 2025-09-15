@@ -98,7 +98,17 @@ const webRTCSignalingSocket = (io) => {
       );
       io.to(sessionId).emit("receive-offer", { sender, receiver, offer });
     });
+   
 
+     socket.on(
+      "send-answer",
+      async ({ sessionId, sender, receiver, answer }) => {
+        console.log(
+          `User ${sender}  is sending an answer to ${receiver} session ${sessionId}`
+        );
+        io.to(sessionId).emit("receive-answer", { sender, receiver, answer });
+      }
+    );
 
 
 
