@@ -124,6 +124,56 @@ const webRTCSignalingSocket = (io) => {
         });
       }
     );
+  
+
+
+
+
+     socket.on("toggle-mute", async ({ sessionId, userId }) => {
+      console.log(`User ${userId} is toggling mute in session ${sessionId}`);
+      const session = await Session.findOne({ sessionId });
+      if (session) {
+        const participant = session.participants.find(
+          (p) => p.userId === userId
+        );
+
+        if (participant) {
+          participant.micOn = !participant.micOn;
+          await session.save();
+
+          console.log(
+            `User ${userId} is now ${participant.micOn ? "micOn" : "unmicOn"}`
+          );
+
+          io.to(sessionId).emit("participant-update", participant);
+        }
+      }
+    });
+
+    socket.on("toggle-video", async ({ sessionId, userId }) => {
+      console.log(`User ${userId} is toggling video in session ${sessionId}`);
+      const session = await Session.findOne({ sessionId });
+      if (session) {
+        const participant = session.participants.find(
+          (p) => p.userId === userId
+        );
+
+        if (participant) {
+          participant.videoOn = !participant.videoOn;
+          await session.save();
+
+          console.log(
+            `User ${userId} has turned their video ${participant.videoOn ? "off" : "on"
+            }`
+          );
+
+          io.to(sessionId).emit("participant-update", participant);
+        }
+      }
+    });
+
+
+    
 
 
 
