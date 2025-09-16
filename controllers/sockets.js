@@ -219,6 +219,34 @@ const webRTCSignalingSocket = (io) => {
         }
       }
     });
+
+   socket.on("send-chat", async ({ sessionId, userId, message }) => {
+      console.log(`User ${userId} is sending chat ${message} in session ${sessionId}
+          `);
+
+      const session = await Session.findOne({ sessionId });
+
+      if (session) {
+        const participant = session.participants.find(
+          (p) => p.userId === userId
+        );
+
+        if (participant) {
+          io.to(sessionId).emit("receive-chat", {
+            userId: userId,
+            name: participant?.name,
+            message: message,
+          });
+          console.log(`Message "${message}" sent by user ${userId}`);
+        }
+      }
+    });
+
+
+
+
+
+    
   });
 };
 
