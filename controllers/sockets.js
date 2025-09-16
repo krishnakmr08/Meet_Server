@@ -3,7 +3,6 @@ const Session = require("../models/session");
 const webRTCSignalingSocket = (io) => {
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
-  
 
     socket.on("prepare-session", async ({ sessionId, userId }) => {
       console.log(`User ${userId} is preparing to join session ${sessionId}`);
@@ -27,8 +26,8 @@ const webRTCSignalingSocket = (io) => {
         socket.emit("error", { message: "Session not found" });
       }
     });
-   
-     socket.on(
+
+    socket.on(
       "join-session",
       async ({ sessionId, userId, name, photo, micOn, videoOn }) => {
         console.log(
@@ -83,9 +82,7 @@ const webRTCSignalingSocket = (io) => {
       }
     );
 
-
-
-     socket.on("current-room", async ({ sessionId }) => {
+    socket.on("current-room", async ({ sessionId }) => {
       console.log("Asking for room participants");
       const session = await Session.findOne({ sessionId });
 
@@ -98,9 +95,8 @@ const webRTCSignalingSocket = (io) => {
       );
       io.to(sessionId).emit("receive-offer", { sender, receiver, offer });
     });
-   
 
-     socket.on(
+    socket.on(
       "send-answer",
       async ({ sessionId, sender, receiver, answer }) => {
         console.log(
@@ -110,8 +106,7 @@ const webRTCSignalingSocket = (io) => {
       }
     );
 
-
-     socket.on(
+    socket.on(
       "send-ice-candidate",
       async ({ sessionId, sender, receiver, candidate }) => {
         console.log(
@@ -124,12 +119,8 @@ const webRTCSignalingSocket = (io) => {
         });
       }
     );
-  
 
-
-
-
-     socket.on("toggle-mute", async ({ sessionId, userId }) => {
+    socket.on("toggle-mute", async ({ sessionId, userId }) => {
       console.log(`User ${userId} is toggling mute in session ${sessionId}`);
       const session = await Session.findOne({ sessionId });
       if (session) {
@@ -163,7 +154,8 @@ const webRTCSignalingSocket = (io) => {
           await session.save();
 
           console.log(
-            `User ${userId} has turned their video ${participant.videoOn ? "off" : "on"
+            `User ${userId} has turned their video ${
+              participant.videoOn ? "off" : "on"
             }`
           );
 
@@ -171,8 +163,6 @@ const webRTCSignalingSocket = (io) => {
         }
       }
     });
-
-
 
     socket.on("hang-up", async () => {
       console.log("User Hang Up:", socket.id);
@@ -197,16 +187,38 @@ const webRTCSignalingSocket = (io) => {
           });
           io.to(session.sessionId).emit("participant-left", participant.userId);
           break;
-
         }
       }
     });
 
+    socket.on("disconnect", async () => {
+      console.log("User disconnected", socket.id);
 
-    
+      const sessions = await Session.find();
+      for (const session of sessions) {
+        const participantIndex = session?.participants?.findIndex(
+          (p) => p?.socketId === socket?.id
+        );
 
+        if (participantIndex !== -1) {
+          const participant = session?.participants[participantIndex];
+          session.participants.splice(participantIndex, 1);
+          await session.save();
 
+          console.log(
+            ` User ${participant.name} (${participant.userId}) left session ${session.sessionId} `
+          );
 
+          io.to(session.sessionId).emit("session-info", {
+            participants: session?.participants,
+          });
+
+          io.to(session.sessionId).emit("participant-left", participant.userId);
+
+          break;
+        }
+      }
+    });
   });
 };
 
